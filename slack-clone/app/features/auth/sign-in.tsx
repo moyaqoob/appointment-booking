@@ -8,12 +8,28 @@ import slacklogo from '@/app/fonts/slack-log.png'
 import {FaGoogle} from "react-icons/fa"
 import { FaGithub } from 'react-icons/fa'
 import { SignInFlow } from '@/app/Types'
+import { signIn } from '@/convex/auth';
+import { useAuthActions } from '@convex-dev/auth/react'
 
 interface SignInProps{
      setState: (state:SignInFlow) => void
 }
 
 const SignIn = ({setState}:SignInProps) => {
+    const {signIn} = useAuthActions();
+
+    const [email,setEmail] = useState("");
+    const [password,setPassword] = useState("");
+    const [pending,setPending] = useState(false);
+    
+
+    const onProviderSignIn = (value:"github"|"google")=>{
+        setPending(true);
+        signIn(value)
+            .finally(()=>{
+                setPending(false);
+            })
+    }
     
   return (
     <Card className='border-none p-5'>
@@ -31,17 +47,18 @@ const SignIn = ({setState}:SignInProps) => {
             <form className='space-y-2.5'>
                 <Input
                 disabled={false}
-                value=''
+                value={email}
                 type="Email"
-                onChange={()=>{}}
+                onChange={(e)=>setEmail(e.target.value)}
                 placeholder='name@work-email.com'
                 required
                 />
                 <Input
                 disabled={false}
-                value=''
+                value={password}
                 type="password"
-                onChange={()=>{}}
+                onChange={(e)=>setPassword(e.target.value)}
+
                 placeholder='Password'
                 required
                 />
@@ -55,14 +72,14 @@ const SignIn = ({setState}:SignInProps) => {
                 
                 <Button type='submit' className='w-full relative' 
                  disabled={false} 
-                 onClick={()=>{}}
+                 onClick={()=>onProviderSignIn("google")}
                  variant="outline"
                  >
                 <FaGoogle className='size-5 absolute top-2.5 left-2.5 '/>
                 Continue with Google</Button>
                 <Button type='submit' className='w-full relative' 
                  disabled={false} 
-                 onClick={()=>{}}
+                 onClick={()=>onProviderSignIn("github")}
                  variant="outline"
                  >
                 <FaGithub className='size-5 absolute top-2.5 left-2.5 '/>

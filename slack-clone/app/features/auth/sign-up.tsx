@@ -26,6 +26,7 @@ const SignUp = ({setState}:SignUpProps) => {
     const [error,setError] = useState<String>("");
     const [pending,setPending] = useState(false);
     
+    
 
     const onPasswordSignUp = (e:React.FormEvent<HTMLFormElement>)=>{
         e.preventDefault();
@@ -76,17 +77,17 @@ const SignUp = ({setState}:SignUpProps) => {
                 />
                 <Input
                 disabled={pending}
-                value=''
+                value={password}
                 type="password"
                 onChange={(e)=>setPassword(e.target.value)}
                 placeholder='Password'
                 required
                 />
                 <Input
-                disabled={false}
-                value=''
+                disabled={pending}
+                value={confirmPassword}
                 type="password"
-                onChange={(e)=>setPassword(e.target.value)}
+                onChange={(e)=>setconfirmPassword(e.target.value)}
                 placeholder='Confirm Password'
                 required
                 />
@@ -113,7 +114,7 @@ const SignUp = ({setState}:SignUpProps) => {
                 Continue with Github</Button>
             </div>
             <p className='text-md text-muted-foreground text-center'>
-            Dont have an account? <span onClick={()=>setState("signUp")} className='text-sky-700 hover:underline cursor-pointer '>Signin up to existing workspace</span></p>
+            Dont have an account? <span onClick={()=>setState("signIn")} className='text-sky-700 hover:underline cursor-pointer '>Sign in up to existing workspace</span></p>
         </CardContent>
     </Card>
   )

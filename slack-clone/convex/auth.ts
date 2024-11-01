@@ -6,10 +6,10 @@ import { convexAuth } from "@convex-dev/auth/server";
 
 
 import {DataModel} from "./_generated/dataModel"
+import { profile } from "console";
 
-const CustomPassword = Password<DataModel>(
-  
-)
+const CustomPassword = Password<DataModel>()
+
 
 export const { auth, signIn, signOut, store } = convexAuth({
   providers: [GitHub, Google, Resend, Password],
