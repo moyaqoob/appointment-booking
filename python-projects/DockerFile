@@ -1,0 +1,12 @@
+From python:3.8-slim
+
+WORKDIR /python
+
+COPY . /python/app.py
+RUN pip install --no-cache-dir -r app.python
+
+EXPOSE 5000
+
+ENV NAME World
+
+CMD ["python","app.py"]
