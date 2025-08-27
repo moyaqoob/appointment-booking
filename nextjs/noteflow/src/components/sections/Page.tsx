@@ -1,6 +1,6 @@
 import React, { type ReactNode } from 'react'
 
-interface PageProps{
+export interface PageProps{
     children:ReactNode
 }
 

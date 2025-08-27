@@ -1,5 +1,4 @@
 @import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
-
 @import "tailwindcss";
 
 :root {
@@ -33,5 +32,26 @@
 
   --color-primary-glow: rgba(68, 229, 231, 0.2);
   --color-primary-50-glow: rgba(236, 252, 253, 0.2);
-  --breakpoint-sm:430px
+  --breakpoint-sm:430px;
+  --color-chestnut : #973F29;
+}
+
+.primary-glow{
+  @apply drop-shadow-[0px_5px_25px_var(--color-primary-glow)]
+}
+.primary-glow-hover{
+  @apply drop-shadow-[0px_0px_25px_var(--color-primary-50-glow)]
+}
+.transition-properties{
+  @apply transition-all duration-150
+}
+
+
+.bg-gradient-to-top {
+  background: url("../public/assets/Noise.webp"),
+              linear-gradient(to top, var(--color-primary-1300), var(--color-primary-1500));
+}
+.bg-gradient-to-bottom {
+  background: url("../public/assets/Noise.webp"),
+              linear-gradient(to bottom, var(--color-primary-1300), var(--color-primary-1500));
 }
