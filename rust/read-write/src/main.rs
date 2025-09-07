@@ -1,12 +1,9 @@
-use clap::{Error, Parser};
+pub mod time;
 
-#[derive(Parser)]
-struct Cli{
-   path:std::path::PathBuf
-}
+use std::io::{self, Write};
+use std::time::Instant;
 
 fn main()->Result<(),Box<dyn std::error::Error>>{
-    let args = Cli::parse();
     let content = std::fs::read_to_string("main.txt");
 
    let result = match content {
