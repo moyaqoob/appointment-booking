@@ -1,14 +1,14 @@
 import bcrypt from "bcrypt";
 import express from "express";
-import client from "../prisma/prisma";
+import client from "../prisma/prisma.js";
 import jwt from "jsonwebtoken"
-import { JWT_SECRET } from "../utils/utils";
+import { JWT_SECRET } from "../utils/utils.js";
 const userRouter = express.Router();
 
 userRouter.post("/signup", async (req, res) => {
   const { name, email, role, password } = req.body;
 
-  if (!name || !email || !role) {
+  if (!name || !email || !role || !role) {
     res.json("empty fields").status(403);
     return;
   }
@@ -23,7 +23,8 @@ userRouter.post("/signup", async (req, res) => {
     return;
   }
   const saltrounds = 10;
-  const hashpassword = bcrypt.hash(password, saltrounds);
+  const hashpassword = await bcrypt.hash(password, saltrounds);
+  console.log("hash",hashpassword)
   await client.user.create({
     data: {
       name: name,
@@ -35,9 +36,10 @@ userRouter.post("/signup", async (req, res) => {
   return res.status(200).json("signup successful");
 });
 
+
 userRouter.post("/login", async(req, res) => {
-  const { name, email, password, role } = req.body;
-  if (!name || !email || !role ||!password) {
+  const { email, password, role } = req.body;
+  if ( !email || !role ||!password) {
     res.json("empty fields").status(403);
     return;
   }
@@ -53,12 +55,10 @@ userRouter.post("/login", async(req, res) => {
     return;
   }
   const token  = jwt.sign({
-    email:email,password:password
-  },JWT_SECRET,{
-    expiresIn:"1h"
-  })
+    email,role
+  },JWT_SECRET)
 
-  res.json(token).status(200)
+  return res.json(token).status(200)
 
 });
 

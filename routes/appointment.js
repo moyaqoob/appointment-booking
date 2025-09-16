@@ -1,11 +1,21 @@
 import express from "express";
-import { profMiddleware } from "../middleware/middleware";
-import client from "../prisma/prisma";
+import { profMiddleware } from "../middleware/middleware.js";
+import client from "../prisma/prisma.js";
 const appointmentRouter = express.Router();
 
-appointmentRouter.post("/availabilty", profMiddleware, async (req, res) => {
+appointmentRouter.post("/test", profMiddleware, async (req, res) => {
+  console.log("the professor middleware has passed");
+
+  res
+    .json({
+      message: "the middleware has passed",
+    })
+    .status(200);
+});
+
+appointmentRouter.post("/createSlots", profMiddleware, async (req, res) => {
   const { professorId, timeslots } = req.body;
-  await Promise.all(
+  const createSlot = await Promise.all(
     timeslots.map((slot) => {
       client.availability.create({
         data: {
@@ -15,6 +25,13 @@ appointmentRouter.post("/availabilty", profMiddleware, async (req, res) => {
       });
     })
   );
+  if (!createSlot) {
+    res
+      .json({
+        message: "Slots cannot created",
+      })
+      .status(403);
+  }
 
   res.json({ message: "slots created" }).status(200);
 });
@@ -40,7 +57,7 @@ appointmentRouter.post("/:id/cancel", profMiddleware, async (req, res) => {
 
   const updated = await client.appointment.update({
     where: { id: studentId },
-    data: { status: "CANCELED" },
+    data: { status: "CANCELLED" },
   });
 
   if (!updated) {
@@ -48,5 +65,7 @@ appointmentRouter.post("/:id/cancel", profMiddleware, async (req, res) => {
       message: "cant cancel the appoint",
     });
   }
-  res.json({message: "Appointment canceled successfully"}).status(200);
+  res.json({ message: "Appointment canceled successfully" }).status(200);
 });
+
+export default appointmentRouter;
