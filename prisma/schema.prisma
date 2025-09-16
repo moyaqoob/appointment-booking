@@ -41,6 +41,8 @@ model Appointment {
   professorId Int
   timeSlot    DateTime
   status      AppointmentStatus @default(PENDING)
+    @@unique([professorId, timeSlot])
+
 }
 
 enum Role {

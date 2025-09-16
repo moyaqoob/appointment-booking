@@ -4,8 +4,8 @@ import client from "../prisma/prisma.js";
 
 const bookingRouter = express();
 
-bookingRouter.post("/test",userMiddleware,async(req,res)=>{
-    console.log("the user middleware has passed")
+bookingRouter.post("/testuser",userMiddleware,async(req,res)=>{
+    console.log("the user middleware has passed",req.body)
     res.json({
         message:"the middleware has passed"
     }).status(200)
@@ -14,25 +14,26 @@ bookingRouter.post("/test",userMiddleware,async(req,res)=>{
 
 bookingRouter.get("/timeSlot/:professorId",userMiddleware,async (req, res) => {
     const professorId = Number(req.params.professorId);
-    const timeSlots = await client.appointment.findMany({
-      where: { professorId },
+    const timeSlots = await client.availability.findMany({
+      where: { professorId:professorId },
       select: { timeSlot: true },
     });
+    console.log("timeSlots",timeSlots)
 
     if (!timeSlots.length) {
       return res.status(404).json({ message: "Time slots not available" });
     }
 
-    res.json(timeSlots);
+    res.status(200).json(timeSlots);
   }
 );
 
 bookingRouter.post("/book/:professorId", userMiddleware, async (req, res) => {
-  const professorId = Number(req.params.professorId);
+  const id = Number(req.params.professorId);
   const { timeSlot } = req.body;
 
   const slot = await client.appointment.findFirst({
-    where: { professorId, timeSlot },
+    where: { id, timeSlot },
   });
 
   if (!slot || slot.status !== "PENDING") {

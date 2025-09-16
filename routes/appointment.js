@@ -13,18 +13,16 @@ appointmentRouter.post("/test", profMiddleware, async (req, res) => {
     .status(200);
 });
 
-appointmentRouter.post("/createSlots", profMiddleware, async (req, res) => {
-  const { professorId, timeslots } = req.body;
-  const createSlot = await Promise.all(
-    timeslots.map((slot) => {
-      client.availability.create({
-        data: {
-          professorId: professorId,
-          timeSlot: slot,
-        },
-      });
-    })
-  );
+appointmentRouter.post("/createSlots", profMiddleware, async (req,res) => {
+  const { timeslots } = req.body;
+  console.log("req userid",req.userId)
+  const createSlot = await client.availability.createMany({
+    data: timeslots.map(slot => ({
+        professorId:req.userId,
+        timeSlot: new Date(slot)
+      })),
+      skipDuplicates: true,
+  })
   if (!createSlot) {
     res
       .json({
@@ -32,7 +30,6 @@ appointmentRouter.post("/createSlots", profMiddleware, async (req, res) => {
       })
       .status(403);
   }
-
   res.json({ message: "slots created" }).status(200);
 });
 
