@@ -1,6 +1,4 @@
 const axios2 = require("axios");
-const { response } = require("express");
-const WebSocket = require("ws");
 const BACKEND_URL = "http://localhost:3000";
 
 const axios = {
@@ -105,6 +103,7 @@ describe("Authentication", () => {
   });
 });
 
+//student endpoints
 describe("Student endpoints", () => {
   let professorToken;
   let studentToken;
@@ -122,7 +121,7 @@ describe("Student endpoints", () => {
       role,
     });
 
-    professorId = professorSignup.data.userId
+    professorId = professorSignup.data.userId;
 
     const professorLogin = await axios.post(`${BACKEND_URL}/login`, {
       email,
@@ -150,7 +149,101 @@ describe("Student endpoints", () => {
   });
 
   test("getting all the apppointments", async () => {
-    const createSlots = await axios.post(`${BACKEND_URL}/createSlots`, {
+    const createSlots = await axios.post(
+      `${BACKEND_URL}/createSlots`,
+      {
+        timeSlots: [
+          "2025-09-18T09:00:00.000Z",
+          "2025-09-18T10:30:00.000Z",
+          "2025-09-18T14:00:00.000Z",
+        ],
+      },
+      {
+        headers: {
+          authorization: `Bearer ${professorToken}`,
+        },
+      }
+    );
+
+    expect(createSlots).toBe(200);
+
+    const getAppointments = await axios.get(
+      `${BACKEND_URL}/timeSlot/${professorId}`,
+      {
+        headers: {
+          authorization: `Bearer ${studentToken}`,
+        },
+      }
+    );
+
+    expect(getAppointments.status).toBe(200);
+    expect(getAppointments.data.apts).toBeDefined();
+  });
+
+  test("Slot booked Successfully", async () => {
+    const book = await axios.post(
+      `${BACKEND_URL}/book/${professorId}`,
+      {
+        timeSlot: "2025-09-18T09:00:00.000Z",
+      },
+      {
+        headers: {
+          authorization: `Bearer ${studentToken}`,
+        },
+      }
+    );
+
+    expect(book.status).toBe(200);
+  });
+});
+
+//professor endpoints
+
+describe("Professor endpoints", () => {
+  let professorId;
+  let professorToken;
+  let studentToken;
+  beforeAll(async () => {
+    const name = "yaqoob-prof";
+    const email = "yaqoob29@gmail.com";
+    const password = "123123";
+    const role = "PROFESSOR";
+    const professorSignup = await axios.post(`${BACKEND_URL}/signup`, {
+      name,
+      email,
+      password,
+      role,
+    });
+
+    professorId = professorSignup.data.userId;
+
+    const professorLogin = await axios.post(`${BACKEND_URL}/login`, {
+      email,
+      password,
+      role,
+    });
+
+    professorToken = professorLogin.data.token;
+
+    const studentSignup = await axios.post(`${BACKEND_URL}/signup`, {
+      name: "ahmed-student",
+      email: "yaqoob11@gmail.com",
+      password: "123123",
+      role: "STUDENT",
+    });
+    expect(studentSignup.status).toBe(200);
+
+    const studentLogin = await axios.post(`${BACKEND_URL}/login`, {
+      email: "yaqoob10@gmail.com",
+      password: "123123",
+      role: "STUDENT",
+    });
+
+    studentToken = studentLogin.data.token;
+  });
+
+  test("create slots", async () => {
+    const parsedata = await axios.post(`${BACKEND_URL}/createSlots`, {
       timeSlots: [
         "2025-09-18T09:00:00.000Z",
         "2025-09-18T10:30:00.000Z",
@@ -162,45 +255,26 @@ describe("Student endpoints", () => {
       }
     });
 
-    expect(createSlots).toBe(200)
-
-    const getAppointments = await axios.get(`${BACKEND_URL}/timeSlot/${professorId}`,{
-      headers:{
-        authorization:`Bearer ${studentToken}`
-      }
-    })
-
-    expect(getAppointments.status).toBe(200)
-    expect(getAppointments.data.apts).toBeDefined();
+    expected(parsedata.data.status).toBe(200);
   });
 
-  test("Slot booked Successfully",async()=>{
-    const book = await axios.post(`${BACKEND_URL}/book/${professorId}`,{
-      timeSlot:"2025-09-18T09:00:00.000Z"
+  test("get the appointments", async () => {
+    const parsedData = await axios.get(`${BACKEND_URL}/appointments`)
+  });
+  test("cancel slots", async() => {
+    const slotBook = await axios.post(`${BACKEND_URL}/book/${professorId}`,{
+        timeSlot:"2025-09-18T09:00:00.000Z"
     },{
-      headers:{
-        authorization:`Bearer ${studentToken}`
-      }
+      authorization:`Bearer ${studentToken}`
+    })
+    let id= slotBook.id;
+    expect(slotBook.status).toBe(200)
+
+    const cancelBooking = await axios.post(`${BACKEND_URL}/cancel/${id}`,{
+       authorization: `Bearer ${professorToken}`
     })
 
-    expect(book.status).toBe(200)
-  })
-});
-
-describe("Professor endpoints", () => {
-
-  beforeAll(async()=>{
-
-  })
-
-  test("create slots",()=>{
-
-  })
-
-  test("get the appointments",()=>{
-    
-  })
-  test("cancel slots",()=>{
-
-  })
+    expect(cancelBooking.status).toBe(200)
+    expect(cancelBooking.data.message).toBe("CANCELLED")
+  });
 });
