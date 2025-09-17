@@ -71,7 +71,7 @@ async function userMiddleware(req, res, next) {
     // )
 
     if(user.role !== "STUDENT"){
-        res.status(403).json("you are not professor")
+        res.status(403).json("you are not student")
         return;
     }
 

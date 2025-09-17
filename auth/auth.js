@@ -8,7 +8,7 @@ const userRouter = express.Router();
 userRouter.post("/signup", async (req, res) => {
   const { name, email, role, password } = req.body;
 
-  if (!name || !email || !role || !role) {
+  if (!name || !email || !role || !password) {
     res.json("empty fields").status(403);
     return;
   }

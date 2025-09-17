@@ -4,51 +4,98 @@ import client from "../prisma/prisma.js";
 
 const bookingRouter = express();
 
-bookingRouter.post("/testuser",userMiddleware,async(req,res)=>{
-    console.log("the user middleware has passed",req.body)
-    res.json({
-        message:"the middleware has passed"
-    }).status(200)
-})
+bookingRouter.post("/testuser", userMiddleware, async (req, res) => {
+  console.log("the user middleware has passed");
+  res
+    .json({
+      message: "the  middleware has passed",
+    })
+    .status(200);
+});
 
+bookingRouter.get(
+  "/timeSlot/:professorId",
+  userMiddleware,
+  async (req, res) => {
+    try {
+      const professorId = Number(req.params.professorId);
+      const timeSlots = await client.availability.findMany({
+        where: { professorId: professorId },
+        select: { timeSlot: true },
+      });
+      console.log("timeSlots", timeSlots);
 
-bookingRouter.get("/timeSlot/:professorId",userMiddleware,async (req, res) => {
-    const professorId = Number(req.params.professorId);
-    const timeSlots = await client.availability.findMany({
-      where: { professorId:professorId },
-      select: { timeSlot: true },
-    });
-    console.log("timeSlots",timeSlots)
+      if (!timeSlots.length) {
+        return res.status(404).json({ message: "Time slots not available" });
+      }
 
-    if (!timeSlots.length) {
-      return res.status(404).json({ message: "Time slots not available" });
+      res.status(200).json(timeSlots);
+    } catch (err) {
+      console.error("Server error occured");
+      return res.status(403).json({
+        message: "server error occureed",
+      });
     }
-
-    res.status(200).json(timeSlots);
   }
 );
 
 bookingRouter.post("/book/:professorId", userMiddleware, async (req, res) => {
-  const id = Number(req.params.professorId);
-  const { timeSlot } = req.body;
+  try {
+    const professorId = Number(req.params.professorId);
+    const { timeSlot } = req.body;
+    const parsedSlot = new Date(timeSlot);
 
-  const slot = await client.appointment.findFirst({
-    where: { id, timeSlot },
-  });
+    console.log("timeSlot", parsedSlot);
 
-  if (!slot || slot.status !== "PENDING") {
-    return res.status(403).json({ message: "Time slot not available" });
+    const availableSlot = await client.availability.findUnique({
+      where: {
+        professorId_timeSlot: {
+          professorId,
+          timeSlot: parsedSlot,
+        },
+      },
+      include: {
+        professor: true,
+      },
+    });
+
+    if (!availableSlot) {
+      return res.status(403).json({ message: "Time slot not found" });
+    }
+
+    console.log(
+      "available slot",
+      availableSlot.professor.name,
+      "id",
+      availableSlot.professor.email,
+      availableSlot.timeSlot
+    );
+
+    await client.$transaction(async (tx) => {
+      await tx.appointment.create({
+        data: {
+          status: "CONFIRMED",
+          studentId: req.userId,
+          professorId,
+          timeSlot: parsedSlot, 
+        },
+      });
+
+      await tx.availability.delete({
+        where: {
+          professorId_timeSlot: {
+            professorId,
+            timeSlot: parsedSlot,
+          },
+        },
+      });
+    });
+
+    return res.json({ message: "Slot booked successfully" });
+  } catch (err) {
+    console.error("Server error occured", err);
+    return res.status(403).json({ message: "Server error occured" });
   }
-
-  await client.appointment.create({
-    data: {
-      status: "CONFIRMED",
-      studentId: req.userId,
-      professorId: professorId,
-    },
-  });
-
-  res.json({ message: "Slot booked successfully" });
 });
 
 export default bookingRouter;
