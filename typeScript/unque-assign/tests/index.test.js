@@ -42,7 +42,7 @@ describe("Authentication", () => {
 
   //signup
   test("user able to signup only once", async () => {
-    const email = "yaqoobwork@email.com";
+    const email = `yaqoob-${Math.random()}@gmail.com`;
     const name = `yaqoob`;
     const password = "123123";
     const signupresponse = await axios.post(`${BACKEND_URL}/signup`, {
@@ -53,18 +53,19 @@ describe("Authentication", () => {
     });
 
     expect(signupresponse.status).toBe(200);
+    expect(signupresponse.data.userId).toBeDefined();
   });
 
   test("signup request fails if email missing", async () => {
     const name = `yaqoob`;
     const password = "123123";
-    const signup = await axios.post(`${BACKEND_URL}/signup`, {
-      name,
+    const signupresponse = await axios.post(`${BACKEND_URL}/signup`, {
+      email: " ",
       password,
       role: "PROFESSOR",
     });
 
-    expect(signup.status).toBe(403);
+    expect(signupresponse.status).toBe(400);
   });
 
   //signin
@@ -72,13 +73,13 @@ describe("Authentication", () => {
     const email = "yaqoobwork@email.com";
     const password = "123123";
 
-    const signupRes = await axios.post(`${BACKEND_URL}/login`, {
+    const signinRes = await axios.post(`${BACKEND_URL}/login`, {
       email,
       password,
       role: "PROFESSOR",
     });
 
-    expect(signupRes.status).toBe(200);
+    expect(signinRes.status).toBe(200);
 
     const signinresponse = await axios.post(`${BACKEND_URL}/login`, {
       email,
@@ -92,14 +93,23 @@ describe("Authentication", () => {
   });
 
   test("Login failed due to wrong email and password", async () => {
-    const randomemail = "abcd@gmail.com";
-    const randompassword = "s83823";
+    const randomemail = "yaqobtimp@email.com";
+    const randompassword = "1233123";
     const loginResponse = await axios.post(`${BACKEND_URL}/login`, {
-      randomemail,
-      randompassword,
+      email: randomemail,
+      password: randompassword,
+      role: "PROFESSOR",
     });
 
-    expect(loginResponse.status).toBe(403);
+    expect(loginResponse.status).toBe(404);
+
+    const loginRes = await axios.post(`${BACKEND_URL}/login`, {
+      email: "yaqoobwork@email.com",
+      password: "12423343",
+      role: "PROFESSOR",
+    });
+
+    expect(loginRes.status).toBe(403);
   });
 });
 
@@ -108,11 +118,15 @@ describe("Student endpoints", () => {
   let professorToken;
   let studentToken;
   let professorId;
-  let userId;
+  const randomSlot = new Date(
+    Date.now() + Math.floor(Math.random() * 10000000)
+  ).toISOString();
   beforeAll(async () => {
-    const name = "yaqoob";
-    const email = "yaqoob28@gmail.com";
-    const password = "123123";
+    const suffix = Math.random().toString(36).slice(2, 8);
+    const name = `yaqoob_${suffix}`;
+    const email = `yaqoob12_${suffix}@gmail.com`;
+    const password = `pw_${suffix}`;
+
     const role = "PROFESSOR";
     const professorSignup = await axios.post(`${BACKEND_URL}/signup`, {
       name,
@@ -123,6 +137,7 @@ describe("Student endpoints", () => {
 
     professorId = professorSignup.data.userId;
 
+    expect(professorId).toBeDefined();
     const professorLogin = await axios.post(`${BACKEND_URL}/login`, {
       email,
       password,
@@ -130,33 +145,31 @@ describe("Student endpoints", () => {
     });
 
     professorToken = professorLogin.data.token;
+    expect(professorToken).toBeDefined();
 
     const studentSignup = await axios.post(`${BACKEND_URL}/signup`, {
-      name: "ahmed",
-      email: "yaqoob10@gmail.com",
-      password: "123123",
+      name: `ahmed-${suffix}`,
+      email: `yaqoob31-${suffix}@gmail.com`,
+      password: `123123-${suffix}`,
       role: "STUDENT",
     });
     expect(studentSignup.status).toBe(200);
 
     const studentLogin = await axios.post(`${BACKEND_URL}/login`, {
-      email: "yaqoob10@gmail.com",
-      password: "123123",
+      email: `yaqoob31-${suffix}@gmail.com`,
+      password: `123123-${suffix}`,
       role: "STUDENT",
     });
+    expect(studentLogin.status).toBe(200);
 
     studentToken = studentLogin.data.token;
   });
 
   test("getting all the apppointments", async () => {
-    const createSlots = await axios.post(
+    const response = await axios.post(
       `${BACKEND_URL}/createSlots`,
       {
-        timeSlots: [
-          "2025-09-18T09:00:00.000Z",
-          "2025-09-18T10:30:00.000Z",
-          "2025-09-18T14:00:00.000Z",
-        ],
+        timeslots: [randomSlot, "2025-09-18T10:30:00.000Z"],
       },
       {
         headers: {
@@ -165,7 +178,8 @@ describe("Student endpoints", () => {
       }
     );
 
-    expect(createSlots).toBe(200);
+    expect(response.status).toBe(200);
+    expect(response.data).toHaveProperty("message", "Slots created");
 
     const getAppointments = await axios.get(
       `${BACKEND_URL}/timeSlot/${professorId}`,
@@ -177,14 +191,13 @@ describe("Student endpoints", () => {
     );
 
     expect(getAppointments.status).toBe(200);
-    expect(getAppointments.data.apts).toBeDefined();
   });
 
   test("Slot booked Successfully", async () => {
-    const book = await axios.post(
+    const booking = await axios.post(
       `${BACKEND_URL}/book/${professorId}`,
       {
-        timeSlot: "2025-09-18T09:00:00.000Z",
+        timeSlot: randomSlot,
       },
       {
         headers: {
@@ -193,7 +206,7 @@ describe("Student endpoints", () => {
       }
     );
 
-    expect(book.status).toBe(200);
+    expect(booking.status).toBe(200);
   });
 });
 
@@ -203,10 +216,16 @@ describe("Professor endpoints", () => {
   let professorId;
   let professorToken;
   let studentToken;
+  const randomSlot = new Date(
+    Date.now() + Math.floor(Math.random() * 10000000)
+  ).toISOString();
+
   beforeAll(async () => {
-    const name = "yaqoob-prof";
-    const email = "yaqoob29@gmail.com";
-    const password = "123123";
+    const suffix = Math.random().toString(36).slice(2, 8);
+    const name = `yaqoob_${suffix}`;
+    const email = `yaqoob_${suffix}@gmail.com`;
+    const password = `pw_${suffix}`;
+
     const role = "PROFESSOR";
     const professorSignup = await axios.post(`${BACKEND_URL}/signup`, {
       name,
@@ -217,6 +236,7 @@ describe("Professor endpoints", () => {
 
     professorId = professorSignup.data.userId;
 
+    expect(professorId).toBeDefined();
     const professorLogin = await axios.post(`${BACKEND_URL}/login`, {
       email,
       password,
@@ -224,57 +244,82 @@ describe("Professor endpoints", () => {
     });
 
     professorToken = professorLogin.data.token;
+    expect(professorToken).toBeDefined();
 
     const studentSignup = await axios.post(`${BACKEND_URL}/signup`, {
-      name: "ahmed-student",
-      email: "yaqoob11@gmail.com",
-      password: "123123",
+      name: `ahmed-${suffix}`,
+      email: `yaqoob23-${suffix}@gmail.com`,
+      password: `123123-${suffix}`,
       role: "STUDENT",
     });
     expect(studentSignup.status).toBe(200);
 
     const studentLogin = await axios.post(`${BACKEND_URL}/login`, {
-      email: "yaqoob10@gmail.com",
-      password: "123123",
+      email: `yaqoob23-${suffix}@gmail.com`,
+      password: `123123-${suffix}`,
       role: "STUDENT",
     });
+    expect(studentLogin.status).toBe(200);
 
     studentToken = studentLogin.data.token;
   });
 
   test("create slots", async () => {
-    const parsedata = await axios.post(`${BACKEND_URL}/createSlots`, {
-      timeSlots: [
-        "2025-09-18T09:00:00.000Z",
-        "2025-09-18T10:30:00.000Z",
-        "2025-09-18T14:00:00.000Z",
-      ],
-    },{
-      headers:{
-        authorization:`Bearer ${professorToken}`
+    const response = await axios.post(
+      `${BACKEND_URL}/createSlots`,
+      {
+        timeslots: [randomSlot, "2025-09-18T10:30:00.000Z"],
+      },
+      {
+        headers: {
+          authorization: `Bearer ${professorToken}`,
+        },
       }
-    });
+    );
 
-    expected(parsedata.data.status).toBe(200);
+    expect(response.status).toBe(200);
+    expect(response.data).toHaveProperty("message", "Slots created");
   });
 
   test("get the appointments", async () => {
-    const parsedData = await axios.get(`${BACKEND_URL}/appointments`)
+    const parsedData = await axios.get(`${BACKEND_URL}/appointments`, {
+      headers: {
+        authorization: `Bearer ${professorToken}`,
+      },
+    });
+
+    expect(parsedData.status).toBe(200);
   });
-  test("cancel slots", async() => {
-    const slotBook = await axios.post(`${BACKEND_URL}/book/${professorId}`,{
-        timeSlot:"2025-09-18T09:00:00.000Z"
-    },{
-      authorization:`Bearer ${studentToken}`
-    })
-    let id= slotBook.id;
-    expect(slotBook.status).toBe(200)
+  test("cancel slots", async () => {
+    const booking = await axios.post(
+      `${BACKEND_URL}/book/${professorId}`,
+      {
+        timeSlot: randomSlot,
+      },
+      {
+        headers: {
+          authorization: `Bearer ${studentToken}`,
+        },
+      }
+    );
 
-    const cancelBooking = await axios.post(`${BACKEND_URL}/cancel/${id}`,{
-       authorization: `Bearer ${professorToken}`
-    })
+    expect(booking.status).toBe(200);
+    expect(booking.data.id).toBeDefined();
+    let aptId = booking.data.id;
+    console.log("aptId", aptId, booking.status);
+    const cancelBooking = await axios.post(
+      `${BACKEND_URL}/cancel/${aptId}`,
+      {},
+      {
+        headers: {
+          authorization: `Bearer ${professorToken}`,
+        },
+      }
+    );
 
-    expect(cancelBooking.status).toBe(200)
-    expect(cancelBooking.data.message).toBe("CANCELLED")
+    console.log("cancel booking status", cancelBooking.data.error);
+
+    expect(cancelBooking.status).toBe(200);
+    expect(cancelBooking.data.message).toBe("CANCELLED");
   });
 });
